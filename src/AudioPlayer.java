@@ -63,6 +63,10 @@ public class AudioPlayer {
      * Pauses the currently playing audio
      */
     public void pause() {
+        // Only pause when audio is playing
+        if (!audioIsPlaying)
+            return;
+
         // Store the current timestamp so audio can start at same position later
         currentTimestamp = audioClip.getMicrosecondPosition();
 
@@ -75,6 +79,10 @@ public class AudioPlayer {
         } catch (InterruptedException ignored) {}
     }
 
+    /**
+     * Jump to a specific timestamp in the file
+     * @param timestamp - part of the audio stream to jump to
+     */
     public void jumpTo(long timestamp) {
         currentTimestamp = timestamp;
     }
@@ -127,6 +135,7 @@ public class AudioPlayer {
 
     public static void main(String[] args) {
         AudioPlayer audioPlayer = new AudioPlayer("testFile.wav");
+        audioPlayer.pause();
         audioPlayer.play();
         try {
             Thread.sleep(3200);
