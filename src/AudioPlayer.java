@@ -9,7 +9,8 @@ public class AudioPlayer {
 
     /* Audio file and clip which stores the audio to be played */
     private Clip audioClip;
-    private AudioInputStream audioFile;
+    private String fileName;
+    private AudioInputStream audioStream;
 
     /* Variables that keep track of the progress of the current audio being played */
     private boolean audioIsPlaying;
@@ -18,26 +19,12 @@ public class AudioPlayer {
 
     /**
      * Prepares the audio file so it may be played later
-     * @param fileName - name of the file with the audio data stored
      */
     public AudioPlayer(String fileName) {
-        try {
-            // Locate the audio file
-            audioFile = AudioSystem.getAudioInputStream(new File(fileName).getAbsoluteFile());
-            
-            // Open the audio file to be played
-            audioClip = AudioSystem.getClip();
-            audioClip.open(audioFile);
-
-            // Set the timestamp at start to be 0
-            currentTimestamp = 0;
-        } catch (UnsupportedAudioFileException uaf) {
-            System.out.println("AudioPlayer() uaf:" + uaf);
-        } catch (LineUnavailableException lu) {
-            System.out.println("AudioPlayer() lu:" + lu);
-        } catch (IOException io) {
-            System.out.println("AudioPlayer() io:" + io);
-        }
+        this.fileName = fileName;
+        
+        // Start the file from the beginning
+        currentTimestamp = 0;
     }
 
     /////////////////////////////////////////////////////
@@ -48,6 +35,9 @@ public class AudioPlayer {
      * Plays the selected audio file
      */
     public void play() {
+        // Open the audio stream
+        openStream();
+
         // Play the audio at the last paused position
         audioClip.setMicrosecondPosition(currentTimestamp);
 
@@ -63,7 +53,8 @@ public class AudioPlayer {
             }
             
             // Reset variables needed to play audio
-            cleanUp();
+            audioIsPlaying = false;
+            closeStream();
         });
         currentAudioThread.start();
     }
@@ -88,17 +79,6 @@ public class AudioPlayer {
         currentTimestamp = timestamp;
     }
 
-    public void close() {
-        // Close the audio stream
-        audioClip.stop();
-        audioClip.close();
-
-        // Close the audio file
-        try {
-            audioFile.close();
-        } catch (IOException ignored) {}
-    }
-
     /////////////////////////////////////////////////////
     //              Getters and Setters
     /////////////////////////////////////////////////////
@@ -107,13 +87,38 @@ public class AudioPlayer {
     //               Helper Functions
     /////////////////////////////////////////////////////
 
-    private void cleanUp() {
-        // Stop the audio stream
-        audioClip.stop();
+    /**
+     * Opens the audio stream so we can use the data from an audio source
+     */
+    private void openStream() {
+        try {
+            // Locate the audio file
+            audioStream = AudioSystem.getAudioInputStream(new File(fileName).getAbsoluteFile());
 
-        // Reset variables used to play audio
-        audioIsPlaying = false;
-        currentAudioThread = null;
+            // Open the audio file to be played
+            audioClip = AudioSystem.getClip();
+            audioClip.open(audioStream);
+        } catch (UnsupportedAudioFileException uaf) {
+            System.out.println("AudioPlayer() uaf:" + uaf);
+        } catch (LineUnavailableException lu) {
+            System.out.println("AudioPlayer() lu:" + lu);
+        } catch (IOException io) {
+            System.out.println("AudioPlayer() io:" + io);
+        }
+    }
+
+    /**
+     * Closes the audio stream so it may be reused later
+     */
+    private void closeStream() {
+        // Stop the audio clip
+        audioClip.stop();
+        audioClip.close();
+
+        // Close the audio stream
+        try {
+            audioStream.close();
+        } catch (IOException ignored) {}
     }
 
     /////////////////////////////////////////////////////
@@ -129,9 +134,5 @@ public class AudioPlayer {
         audioPlayer.pause();
         audioPlayer.jumpTo(2000);
         audioPlayer.play();
-//        try {
-//            Thread.sleep(3200);
-//        } catch (InterruptedException ignored) {}
-//        audioPlayer.close();
     }
 }
