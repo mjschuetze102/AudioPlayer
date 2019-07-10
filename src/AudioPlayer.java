@@ -41,6 +41,7 @@ public class AudioPlayer {
                     Thread.sleep(10);
                 } catch (InterruptedException ignored) {}
             }
+            cleanUp();
         });
         currentAudioThread.start();
     }
@@ -68,6 +69,9 @@ public class AudioPlayer {
     private void cleanUp() {
         audioClip.stop();
         audioClip.close();
+
+        audioIsPlaying = false;
+        currentAudioThread = null;
 
         try {
             audioFile.close();
